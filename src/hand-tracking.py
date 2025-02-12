@@ -3,6 +3,7 @@ import mediapipe as mp
 import pyautogui
 import time
 import threading
+import os
 
 class HandTrackingMouseControl:
     def __init__(self):
@@ -10,6 +11,10 @@ class HandTrackingMouseControl:
         self.mp_draw = mp.solutions.drawing_utils
         self.hands = self.mp_hands.Hands(min_detection_confidence=0.8, min_tracking_confidence=0.5, max_num_hands=1, static_image_mode=False)
         
+        # Works in Windows & Linux/Mac
+        os.system("cls" if os.name == "nt" else "clear")
+        print("press strg or ctrl + c to exit")
+
         self.cap = cv2.VideoCapture(0)
         
         self.screen_width, self.screen_height = pyautogui.size()
