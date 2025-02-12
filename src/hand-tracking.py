@@ -104,4 +104,8 @@ class HandTrackingMouseControl:
 
 if __name__ == "__main__":
     hand_tracking = HandTrackingMouseControl()
-    hand_tracking.run()
+    try:
+        hand_tracking.run()
+    except KeyboardInterrupt:
+        print("Script has been terminated!")
+        pass
