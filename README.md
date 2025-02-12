@@ -17,10 +17,10 @@ pip install -r requirements.txt
 ```
 then 
 ```sh
-python scr/hand-tracking.py
+python src/hand-tracking.py
 ```
 or
 ```sh
-python scr/hand-tracking-no-window.py
+python src/hand-tracking-no-window.py
 ```
 if you don't want a window
