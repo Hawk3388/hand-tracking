@@ -6,4 +6,21 @@ Control your mouse with your hand
 *  a camara
 
 # Installation
-run: `pip install -r requirements.txt` then `python scr/hand-tracking.py` or `python scr/hand-tracking-no-window.py` if you don't want a window
+clone the repository
+```sh
+git clone https://github.com/Hawk3388/hand-tracking
+cd hand-tracking
+```
+now run
+```sh
+pip install -r requirements.txt
+```
+then 
+```sh
+python scr/hand-tracking.py
+```
+or
+```sh
+python scr/hand-tracking-no-window.py
+```
+if you don't want a window
