@@ -2,7 +2,7 @@
 Control your mouse with your hand
 
 # System requirements
-* python >= 3.9
+* python >= 3.10
 *  a camara
 
 # Installation
