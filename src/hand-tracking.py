@@ -12,6 +12,7 @@ class HandTrackingMouseControl:
         self.hands = self.mp_hands.Hands(min_detection_confidence=0.8, min_tracking_confidence=0.5, max_num_hands=1, static_image_mode=False)
         
         # Works in Windows & Linux/Mac
+        time.sleep(0.001)
         os.system("cls" if os.name == "nt" else "clear")
         print("press strg or ctrl + c to exit")
 
