@@ -18,9 +18,14 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge test into main
-        run: |
-          git checkout main
-          git pull origin main
-          git merge --no-ff test -m "Automated merge from test to main"
-          git push origin main
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: test
+          base: main
+          title: "Automated PR: Merge test into main"
+          body: "This PR merges test into main after a release."
+          labels: "automated-pr"
+          reviewers: "your-github-username"
+          author: "github-actions[bot]"
+          commit-message: "Automated merge from test to main"
