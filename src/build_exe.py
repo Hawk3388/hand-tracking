@@ -37,12 +37,12 @@ subprocess.run(" ".join(pyinstaller_cmd), shell=True)
 build_folder = "build"
 spec_file = f"{script_name}.spec"
 
-if os.path.exists(build_folder):
+if os.path.exists(build_folder) and os.path.exists(spec_file):
     shutil.rmtree(build_folder)  # Delete the build/ folder
+    os.remove(spec_file)  # Delete the .spec file    
 
-if os.path.exists(spec_file):
-    os.remove(spec_file)  # Delete the .spec file
-
-print("\n✅ Build completed successfully!")
-print(f"📁 Your .exe file is in the 'dist/' folder: dist/{script_name}.exe")
-print("🧹 Cleaned up build files.")
+    print("\n✅ Build completed successfully!")
+    print(f"📁 Your .exe file is in the 'dist/' folder: dist/{script_name}.exe")
+    print("🧹 Cleaned up build files.")
+else:
+    print("\n❌ Build failed. Please check the error message above.") 
