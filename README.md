@@ -27,6 +27,7 @@ if you don't want a window
 
 # Usage
 Download the latest build from the [GitHub releases](https://github.com/Hawk3388/han-tracking/releases) page.
+
 If you want to build your own .exe file, you have to install `pyinstaller`
 ```sh
 pip install pyinstaller==6.12.0
