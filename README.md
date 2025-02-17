@@ -17,17 +17,7 @@ Control your mouse with your hand!
 ### 1️⃣ **Easiest Method: Use the Prebuilt `.exe`**  
 Download the latest version from the [GitHub Releases](https://github.com/Hawk3388/hand-tracking/releases) page and run the program directly – no Python installation required!  
 
-### 2️⃣ **Build Your Own `.exe`**  
-If you want to create your own executable file, first install `pyinstaller`:  
-```sh  
-pip install pyinstaller==6.12.0  
-```  
-Then, create the `.exe` file using the following command:  
-```sh  
-python src/build_exe.py --file src/hand-tracking.py  # or hand-tracking-no-window.py  
-```  
-
-### 3️⃣ **Run Directly with Python**  
+### 2️⃣ **Run Directly with Python**  
 If you prefer to run the application using Python:  
 
 #### 🔹 Clone the Repository  
@@ -48,6 +38,16 @@ python src/hand-tracking.py
 If you don’t want a graphical window, use:  
 ```sh  
 python src/hand-tracking-no-window.py  
+```  
+
+### 3️⃣ **Build Your Own `.exe`**  
+If you want to create your own executable file, first install `pyinstaller`:  
+```sh  
+pip install pyinstaller==6.12.0  
+```  
+Then, create the `.exe` file using the following command:  
+```sh  
+python src/build_exe.py --file hand-tracking.py  # or hand-tracking-no-window.py  
 ```  
 
 ## 📝 License  
