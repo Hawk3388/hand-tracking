@@ -1,38 +1,54 @@
-# Hand-tracking
-Control your mouse with your hand
+# Hand Tracking 🖐️  
+Control your mouse with your hand!  
 
-# System requirements
-* python >=3.8, <3.12
-*  a camara
+## 🚀 Features  
+✅ Hand-tracking for mouse control  
+✅ Supports different modes (with/without window)  
+✅ Easy installation and usage  
+✅ Available as an executable (.exe)  
 
-# Usage
-Download the latest build from the [GitHub releases](https://github.com/Hawk3388/hand-tracking/releases) page to run this programm easily and without python.
+## 🛠️ System Requirements  
+- **Operating System**: Windows (other OS may require adjustments)  
+- **Python**: >=3.8, <3.12 (only required for Python users)  
+- **Hardware**: A functional camera  
 
-If you want to build your own .exe file, you have to install `pyinstaller`
-```sh
-pip install pyinstaller==6.12.0
-```
-to run
-```sh
-python src/build_exe.py --file hand-tracking.py (or hand-tracking-no-window.py)
-```
+## 📥 Installation & Usage  
 
-# Python Usage
-clone the repository
-```sh
-git clone https://github.com/Hawk3388/hand-tracking
-cd hand-tracking
-```
-now run
-```sh
-pip install -r requirements.txt
-```
-then 
-```sh
-python src/hand-tracking.py
-```
-or
-```sh
-python src/hand-tracking-no-window.py
-```
-if you don't want a window
+### 1️⃣ **Easiest Method: Use the Prebuilt `.exe`**  
+Download the latest version from the [GitHub Releases](https://github.com/Hawk3388/hand-tracking/releases) page and run the program directly – no Python installation required!  
+
+### 2️⃣ **Build Your Own `.exe`**  
+If you want to create your own executable file, first install `pyinstaller`:  
+```sh  
+pip install pyinstaller==6.12.0  
+```  
+Then, create the `.exe` file using the following command:  
+```sh  
+python src/build_exe.py --file hand-tracking.py  # or hand-tracking-no-window.py  
+```  
+
+### 3️⃣ **Run Directly with Python**  
+If you prefer to run the application using Python:  
+
+#### 🔹 Clone the Repository  
+```sh  
+git clone https://github.com/Hawk3388/hand-tracking.git  
+cd hand-tracking  
+```  
+
+#### 🔹 Install Dependencies  
+```sh  
+pip install -r requirements.txt  
+```  
+
+#### 🔹 Start the Application  
+```sh  
+python src/hand-tracking.py  
+```  
+If you don’t want a graphical window, use:  
+```sh  
+python src/hand-tracking-no-window.py  
+```  
+
+## 📝 License  
+This project is licensed under the **MIT License**. See the [`LICENSE`](LICENSE) file for more details.
