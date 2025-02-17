@@ -24,3 +24,10 @@ or
 python src/hand-tracking-no-window.py
 ```
 if you don't want a window
+
+# Usage
+you can download the latest build from the [Github releases](https://github.com/Hawk3388/hand-tracking/releases) page.
+or if you want to build your own .exe file, you can run
+```sh
+python src/build_exe.py --file hand-tracking.py (or hand-tracking-no-window)
+```
