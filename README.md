@@ -5,7 +5,19 @@ Control your mouse with your hand
 * python >=3.8, <3.12
 *  a camara
 
-# Installation
+# Usage
+Download the latest build from the [GitHub releases](https://github.com/Hawk3388/han-tracking/releases) page to run this programm easily and without python.
+
+If you want to build your own .exe file, you have to install `pyinstaller`
+```sh
+pip install pyinstaller==6.12.0
+```
+to run
+```sh
+python src/build_exe.py --file hand-tracking.py (or hand-tracking-no-window.py)
+```
+
+# Python Usage
 clone the repository
 ```sh
 git clone https://github.com/Hawk3388/hand-tracking
@@ -24,15 +36,3 @@ or
 python src/hand-tracking-no-window.py
 ```
 if you don't want a window
-
-# Usage
-Download the latest build from the [GitHub releases](https://github.com/Hawk3388/han-tracking/releases) page.
-
-If you want to build your own .exe file, you have to install `pyinstaller`
-```sh
-pip install pyinstaller==6.12.0
-```
-to run
-```sh
-python src/build_exe.py --file hand-tracking.py (or hand-tracking-no-window.py
-```
