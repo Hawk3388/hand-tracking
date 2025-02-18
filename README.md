@@ -47,7 +47,7 @@ pip install pyinstaller==6.12.0
 ```  
 Then, create the `.exe` file using the following command:  
 ```sh  
-python src/build_exe.py --file hand-tracking.py  # or hand-tracking-no-window.py  
+python src/build_exe.py --file src/hand-tracking.py  # or src/hand-tracking-no-window.py  
 ```  
 
 ## 📝 License  
