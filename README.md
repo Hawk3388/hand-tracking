@@ -14,8 +14,8 @@ Control your mouse with your hand!
 
 ## 📥 Installation & Usage  
 
-### 1️⃣ **Easiest Method: Use the Prebuilt `.exe`**  
-Download the latest version from the [GitHub Releases](https://github.com/Hawk3388/hand-tracking/releases) page and run the program directly – no Python installation required!  
+### 1️⃣ **Easiest Method: Use the Prebuilt Executables**  
+Download the latest version from the [GitHub Releases](https://github.com/Hawk3388/hand-tracking/releases) page and run the program directly – no Python installation required! Prebuilt executables are available for **Windows, Linux, and macOS**.  
 
 ### 2️⃣ **Run Directly with Python**  
 If you prefer to run the application using Python:  
