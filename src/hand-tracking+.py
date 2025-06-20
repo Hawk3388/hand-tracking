@@ -20,7 +20,7 @@ class HandTrackingMouseControlSimpleDisplay:
         time.sleep(0.001)
         os.system("cls" if os.name == "nt" else "clear")
         print("press strg or ctrl + c to exit")
-        print("Zeige mit dem Zeigefinger nach links/rechts um zwischen Monitoren zu wechseln")
+        print("Bewege deine Hand zu den roten Rändern des Kamerabilds um zwischen Monitoren zu wechseln")
 
         self.cap = cv2.VideoCapture(0)
         
@@ -41,9 +41,12 @@ class HandTrackingMouseControlSimpleDisplay:
         # Define regions for different monitors/functions
         self.region_x_min, self.region_x_max = 0.2, 0.8
         self.region_y_min, self.region_y_max = 0.2, 0.8
-        
-        # Monitor switching parameters
+          # Monitor switching parameters
         self.current_monitor = 0
+          # Monitor switching with edge zones
+        self.last_monitor_switch = 0
+        self.monitor_switch_cooldown = 1.0  # Cooldown between monitor switches
+        self.monitor_switch_zone_width = 0.15  # 15% zones on left/right for monitor switching
           # Directional monitor switching
         self.directional_switch_active = False
         self.pointing_threshold = 0.07
@@ -183,65 +186,70 @@ class HandTrackingMouseControlSimpleDisplay:
                 'monitor': monitor,
                 'position': i
             }
-            zones.append(zone)
-        
+            zones.append(zone)        
         return zones
     
-    def detect_pointing_gesture(self, hand_landmarks):
-        """Detect pointing gesture for directional monitor switching."""
+    def detect_monitor_zone_switch(self, hand_landmarks):
+        """Detect monitor switching based on hand position in adaptive edge zones."""
         current_time = time.time()
         
-        if current_time - self.last_pointing_switch < self.pointing_switch_cooldown:
+        if current_time - self.last_monitor_switch < self.monitor_switch_cooldown:
             return
         
         if len(self.monitors) <= 1:
             return
         
-        # Get hand position (use same finger as mouse control)
+        # Use the SAME point that controls the mouse (middle finger MCP joint 9)
+        # This ensures consistent behavior between mouse control and monitor switching
         middle_finger_control = hand_landmarks.landmark[9]
+        hand_x = middle_finger_control.x
+          # Calculate adaptive zone boundaries based on current control region
+        gap_width = 0.05  # 5% gap between green control area and red switch zones
         
-        # Use the SAME normalization as mouse control
-        norm_x = (middle_finger_control.x - self.region_x_min) / (self.region_x_max - self.region_x_min)
-        norm_x = max(0, min(1, norm_x))  # Clamp to 0-1
+        # Left zone: from left edge to before green control region (with gap)
+        left_zone_end = max(0, self.region_x_min - gap_width)
         
-        # Debug output
-        # print(f"Monitor switching: norm_x={norm_x:.2f}, raw_x={middle_finger_control.x:.2f}")        # Very simple detection - check normalized position within control region
-        if norm_x < 0.1:  # Far left within control region
-            # Only switch left if there's a monitor to the left
+        # Right zone: from after green control region (with gap) to right edge
+        right_zone_start = min(1.0, self.region_x_max + gap_width)
+        
+        # Check if hand is in left monitor switch zone
+        if hand_x < left_zone_end and left_zone_end > 0.05:  # Only if zone has reasonable width
+            # Try to switch to left monitor
             current_monitor_obj = self.monitors[self.current_monitor]
-            left_monitor_index = None
+            target_monitor_index = None
             
-            # Find the monitor directly to the left
+            # Find monitor to the left (adjacent)
             for i, monitor in enumerate(self.monitors):
                 if (monitor.x + monitor.width <= current_monitor_obj.x and 
                     monitor.y < current_monitor_obj.y + current_monitor_obj.height and
                     monitor.y + monitor.height > current_monitor_obj.y):
-                    if left_monitor_index is None or monitor.x > self.monitors[left_monitor_index].x:
-                        left_monitor_index = i
+                    if target_monitor_index is None or monitor.x > self.monitors[target_monitor_index].x:
+                        target_monitor_index = i
             
-            if left_monitor_index is not None:
-                self.current_monitor = left_monitor_index
-                self.last_pointing_switch = current_time
-                print(f">>> SWITCHED TO LEFT MONITOR {self.current_monitor + 1}")
+            if target_monitor_index is not None:
+                self.current_monitor = target_monitor_index
+                self.last_monitor_switch = current_time
+                print(f"🖱️ ZONE LEFT → Monitor {self.current_monitor + 1}")
                 self.update_control_region_for_monitor()
-                
-        elif norm_x > 0.9:  # Far right within control region
-            # Only switch right if there's a monitor to the right
+        
+        # Check if hand is in right monitor switch zone
+        elif hand_x > right_zone_start and (1.0 - right_zone_start) > 0.05:  # Only if zone has reasonable width
+            # Try to switch to right monitor
             current_monitor_obj = self.monitors[self.current_monitor]
-            right_monitor_index = None
+            target_monitor_index = None
             
-            # Find the monitor directly to the right
+            # Find monitor to the right (adjacent)
             for i, monitor in enumerate(self.monitors):
                 if (monitor.x >= current_monitor_obj.x + current_monitor_obj.width and
                     monitor.y < current_monitor_obj.y + current_monitor_obj.height and
                     monitor.y + monitor.height > current_monitor_obj.y):
-                    if right_monitor_index is None or monitor.x < self.monitors[right_monitor_index].x:
-                        right_monitor_index = i
+                    if target_monitor_index is None or monitor.x < self.monitors[target_monitor_index].x:
+                        target_monitor_index = i
             
-            if right_monitor_index is not None:
-                self.current_monitor = right_monitor_index
-                self.last_pointing_switch = current_time
-                print(f">>> SWITCHED TO RIGHT MONITOR {self.current_monitor + 1}")
+            if target_monitor_index is not None:
+                self.current_monitor = target_monitor_index
+                self.last_monitor_switch = current_time
+                print(f"🖱️ ZONE RIGHT → Monitor {self.current_monitor + 1}")
                 self.update_control_region_for_monitor()
     
     def get_monitor_from_pointing_direction(self, hand_x):
@@ -471,7 +479,7 @@ class HandTrackingMouseControlSimpleDisplay:
                     pyautogui.moveTo(*self.mouse_position)
                 self.mouse_action = None
             time.sleep(0.001)
-
+    
     def update_control_region_for_monitor(self):
         """Update control region based on current monitor's actual pixel size and orientation."""
         if not self.monitors or self.current_monitor >= len(self.monitors):
@@ -495,58 +503,72 @@ class HandTrackingMouseControlSimpleDisplay:
         # Camera resolution (fixed)
         camera_aspect_ratio = self.camera_width / self.camera_height
         print(f"  Camera aspect ratio: {camera_aspect_ratio:.3f}")
-          # Calculate scale factor based on actual pixel dimensions
-        # Compare this monitor to a reference monitor (the largest one)
-        largest_monitor_area = max(m.width * m.height for m in self.monitors)
-        monitor_area = monitor_width * monitor_height
-        area_ratio = monitor_area / largest_monitor_area
         
-        print(f"  Monitor area: {monitor_area} pixels")
-        print(f"  Largest monitor area: {largest_monitor_area} pixels")
-        print(f"  Area ratio vs largest: {area_ratio:.3f}")        # Base control region size - scale more aggressively based on monitor size
-        base_margin = 0.1  # 10% border around the control region - good balance
+        # Fixed margin from camera edge (in normalized coordinates)
+        fixed_margin = 0.08  # 8% margin on all sides
         
-        # Scale the control region size based on monitor pixel dimensions
-        # More generous scaling to make the region larger
-        size_scale = 0.6 + (area_ratio * 0.3)  # Scale between 60% and 90%
+        # Extra margin for monitor switch zones if multiple monitors exist
+        extra_horizontal_margin = 0.0
+        if len(self.monitors) > 1:
+            extra_horizontal_margin = self.monitor_switch_zone_width  # Reserve space for monitor switch zones
         
-        print(f"  Size scale factor: {size_scale:.3f}")
+        # Available space for the control region
+        available_width = 1.0 - 2 * (fixed_margin + extra_horizontal_margin)
+        available_height = 1.0 - 2 * fixed_margin
         
-        # Calculate actual control region dimensions proportional to monitor
-        # Always maintain the monitor's aspect ratio
-        region_width = (1.0 - 2 * base_margin) * size_scale
-        region_height = region_width / monitor_aspect_ratio
+        print(f"  Fixed margin: {fixed_margin:.3f}")
+        print(f"  Extra horizontal margin for switch zones: {extra_horizontal_margin:.3f}")
+        print(f"  Available space: {available_width:.3f} x {available_height:.3f}")
         
-        # If the height would exceed camera bounds, scale down proportionally
-        max_height = 1.0 - 2 * base_margin
-        if region_height > max_height:
-            region_height = max_height * size_scale
+        # Calculate the largest possible rectangle with monitor aspect ratio
+        # that fits within the available space
+        if monitor_aspect_ratio > (available_width / available_height):
+            # Monitor is wider relative to available space - width is limiting factor
+            region_width = available_width
+            region_height = region_width / monitor_aspect_ratio
+            print(f"  Width-limited: using full available width")
+        else:
+            # Monitor is taller relative to available space - height is limiting factor
+            region_height = available_height
             region_width = region_height * monitor_aspect_ratio
+            print(f"  Height-limited: using full available height")
         
-        # If the width would exceed camera bounds, scale down proportionally
-        max_width = 1.0 - 2 * base_margin
-        if region_width > max_width:
-            region_width = max_width * size_scale
-            region_height = region_width / monitor_aspect_ratio        # Center the region
+        print(f"  Calculated region: {region_width:.3f} x {region_height:.3f}")
+        print(f"  Region aspect ratio: {region_width/region_height:.3f}")
+        print(f"  Monitor aspect ratio: {monitor_aspect_ratio:.3f}")
+        print(f"  Aspect ratio difference: {abs((region_width/region_height) - monitor_aspect_ratio):.6f}")
+        
+        # Center the region in the camera image
         horizontal_center = 0.5
         vertical_center = 0.5
         
         self.region_x_min = horizontal_center - region_width / 2
         self.region_x_max = horizontal_center + region_width / 2
         self.region_y_min = vertical_center - region_height / 2
-        self.region_y_max = vertical_center + region_height / 2        # Ensure bounds are within camera frame with safe margins
-        self.region_x_min = max(0.08, self.region_x_min)  # Minimum 8% margin
-        self.region_x_max = min(0.92, self.region_x_max)  # Maximum 92% of camera width
-        self.region_y_min = max(0.08, self.region_y_min)  # Minimum 8% margin
-        self.region_y_max = min(0.92, self.region_y_max)  # Maximum 92% of camera height
+        self.region_y_max = vertical_center + region_height / 2
         
-        print(f"  Size scale factor: {size_scale:.3f}")
-        print(f"  New control region: X({self.region_x_min:.3f}-{self.region_x_max:.3f}), Y({self.region_y_min:.3f}-{self.region_y_max:.3f})")
-        print(f"  Control region size: {(self.region_x_max - self.region_x_min):.3f} x {(self.region_y_max - self.region_y_min):.3f}")
-        control_aspect = (self.region_x_max - self.region_x_min) / (self.region_y_max - self.region_y_min)
-        print(f"  Control region aspect ratio: {control_aspect:.3f}")
-        print(f"  Expected monitor aspect ratio: {monitor_aspect_ratio:.3f}")
-        print(f"  Aspect ratio match: {abs(control_aspect - monitor_aspect_ratio) < 0.1}")
+        print(f"  Control region bounds: X({self.region_x_min:.3f}-{self.region_x_max:.3f}), Y({self.region_y_min:.3f}-{self.region_y_max:.3f})")
+        
+        # Verify the aspect ratio is exactly correct
+        final_aspect = (self.region_x_max - self.region_x_min) / (self.region_y_max - self.region_y_min)
+        print(f"  Final aspect ratio: {final_aspect:.6f}")
+        print(f"  Aspect ratio perfect match: {abs(final_aspect - monitor_aspect_ratio) < 0.001}")
+        
+        # Verify margins are respected
+        margin_left = self.region_x_min
+        margin_right = 1.0 - self.region_x_max
+        margin_top = self.region_y_min
+        margin_bottom = 1.0 - self.region_y_max
+        print(f"  Actual margins: L:{margin_left:.3f}, R:{margin_right:.3f}, T:{margin_top:.3f}, B:{margin_bottom:.3f}")
+        
+        # Verify minimum margins are met
+        min_margin_check = all([
+            margin_left >= fixed_margin + extra_horizontal_margin - 0.001,
+            margin_right >= fixed_margin + extra_horizontal_margin - 0.001,
+            margin_top >= fixed_margin - 0.001,
+            margin_bottom >= fixed_margin - 0.001
+        ])
+        print(f"  Minimum margins respected: {min_margin_check}")
     
     def run(self):
         while self.cap.isOpened():
@@ -578,10 +600,8 @@ class HandTrackingMouseControlSimpleDisplay:
                 # Smooth position
                 raw_position = (x, y)
                 self.mouse_position = self.smooth_position(raw_position)
-                self.mouse_action = "move"
-                
-                # Gesture detection
-                self.detect_pointing_gesture(hand_landmarks)
+                self.mouse_action = "move"                  # Gesture detection
+                self.detect_monitor_zone_switch(hand_landmarks)
                 self.detect_3d_click(hand_landmarks)
                 
                 # Draw hand landmarks - like the original
@@ -591,9 +611,39 @@ class HandTrackingMouseControlSimpleDisplay:
             region_end_x = int(self.region_x_max * self.camera_width)
             region_start_y = int(self.region_y_min * self.camera_height)
             region_end_y = int(self.region_y_max * self.camera_height)
-            
             cv2.rectangle(frame, (region_start_x, region_start_y), 
-                         (region_end_x, region_end_y), (0, 255, 0), 2)            # Show 3D depth and pinch distance information
+                         (region_end_x, region_end_y), (0, 255, 0), 2)
+              # Draw monitor switch zones (left and right edges, adapted to green control region)
+            if len(self.monitors) > 1:
+                # Calculate zone positions based on green control region boundaries
+                gap_width = 0.1  # 10% gap between green control area and red switch zones
+                zone_width = 0.08  # 8% width for each switch zone
+                
+                # Left zone starts at left edge, ends before green control region (with gap)
+                left_zone_start = 0
+                left_zone_end = max(0, self.region_x_min - gap_width)
+                left_zone_width = left_zone_end - left_zone_start
+                
+                # Right zone starts after green control region (with gap), ends at right edge
+                right_zone_start = min(1.0, self.region_x_max + gap_width)
+                right_zone_end = 1.0
+                right_zone_width = right_zone_end - right_zone_start
+                
+                # Convert to pixel coordinates
+                left_zone_start_px = int(left_zone_start * self.camera_width)
+                left_zone_end_px = int(left_zone_end * self.camera_width)
+                right_zone_start_px = int(right_zone_start * self.camera_width)
+                right_zone_end_px = int(right_zone_end * self.camera_width)
+                
+                # Draw left zone (only if it has reasonable width)
+                if left_zone_width > 0.05:  # At least 5% width
+                    cv2.rectangle(frame, (left_zone_start_px, 0), (left_zone_end_px, self.camera_height), (0, 0, 255), 2)
+                    cv2.putText(frame, "← LEFT", (5, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                
+                # Draw right zone (only if it has reasonable width)
+                if right_zone_width > 0.05:  # At least 5% width
+                    cv2.rectangle(frame, (right_zone_start_px, 0), (right_zone_end_px, self.camera_height), (0, 0, 255), 2)
+                    cv2.putText(frame, "RIGHT →", (self.camera_width - 80, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)# Show 3D depth and pinch distance information
             if hasattr(self, 'smoothed_z'):
                 depth_text = f"Depth: {self.smoothed_z:.3f}"
                 cv2.putText(frame, depth_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
@@ -619,8 +669,7 @@ class HandTrackingMouseControlSimpleDisplay:
                     
                     # Visual pinch indicator
                     pinch_color = (0, 0, 255) if pinch_distance < self.pinch_threshold_3d else (255, 255, 255)
-                    cv2.circle(frame, (10, 140), 10, pinch_color, -1)
-                      # Show hand position for monitor switching
+                    cv2.circle(frame, (10, 140), 10, pinch_color, -1)                    # Show swipe gesture status
                     middle_finger_control = hand_landmarks.landmark[9]
                     norm_x = (middle_finger_control.x - self.region_x_min) / (self.region_x_max - self.region_x_min)
                     norm_x = max(0, min(1, norm_x))
@@ -628,13 +677,21 @@ class HandTrackingMouseControlSimpleDisplay:
                     hand_pos_text = f"Control X: {norm_x:.2f}"
                     cv2.putText(frame, hand_pos_text, (10, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
                     
-                    # Show zones based on normalized position
-                    if norm_x < 0.1:
-                        cv2.putText(frame, "LEFT ZONE", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                    elif norm_x > 0.9:
-                        cv2.putText(frame, "RIGHT ZONE", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    # Show adaptive zone-based monitor switch status
+                    # Use the SAME point that controls the mouse (middle finger MCP joint 9)
+                    middle_finger_control = hand_landmarks.landmark[9]
+                    hand_x = middle_finger_control.x
+                      # Calculate adaptive zone boundaries (same as in drawing code)
+                    gap_width = 0.05
+                    left_zone_end = max(0, self.region_x_min - gap_width)
+                    right_zone_start = min(1.0, self.region_x_max + gap_width)
+                    
+                    if hand_x < left_zone_end and left_zone_end > 0.05:
+                        cv2.putText(frame, "ZONE: LEFT ←", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                    elif hand_x > right_zone_start and (1.0 - right_zone_start) > 0.05:
+                        cv2.putText(frame, "ZONE: RIGHT →", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
                     else:
-                        cv2.putText(frame, "CENTER", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                        cv2.putText(frame, "CONTROL AREA", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             
             # Simple window title like the original
             cv2.imshow("Hand Tracking", frame)
