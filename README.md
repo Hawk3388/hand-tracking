@@ -6,7 +6,7 @@ Control your computer with just your hands.
 
 - **Hand gesture recognition** for mouse control
 - **Two modes**: GUI window or background operation
-- **ASL recognition** (American Sign Language) support - trained on [ASL Now Fingerspelling dataset](https://huggingface.co/datasets/sid220/asl-now-fingerspelling)
+- **ASL recognition model** (American Sign Language) support
 - **Multi-monitor support**
 - **Standalone executables** - no Python installation required
 
