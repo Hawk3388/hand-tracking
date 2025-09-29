@@ -2,6 +2,7 @@ dataset/
 mkl_hook.py
 *.exe
 exe/
+prototyp.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
