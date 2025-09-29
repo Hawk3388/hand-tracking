@@ -19,35 +19,35 @@ class HandTracking:
         
         time.sleep(0.001)
         os.system("cls" if os.name == "nt" else "clear")
-        print("Drücke Strg oder Ctrl + C zum Beenden")
-        print("Bewege deine Hand zu den roten Rändern des Kamerabilds, um zwischen Monitoren zu wechseln")
+        print("Press Ctrl or Ctrl + C to exit")
+        print("Move your hand to the red edges of the camera image to switch between monitors")
 
         self.cap = cv2.VideoCapture(0)
         
-        # Überprüfe, ob die Kamera verfügbar ist
+        # Check if camera is available
         if not self.cap.isOpened():
-            print("Fehler: Kamera konnte nicht geöffnet werden!")
-            raise Exception("Kamera nicht verfügbar")        # Multi-Monitor Setup
+            print("Error: Camera could not be opened!")
+            raise Exception("Camera not available")        # Multi-Monitor Setup
         self.setup_multi_monitor()
-        print(f"Erkannte Monitore: {len(self.monitors)}")
+        print(f"Detected monitors: {len(self.monitors)}")
         for i, monitor in enumerate(self.monitors):
-            print(f"  Monitor {i+1}: {monitor.width}x{monitor.height} bei ({monitor.x}, {monitor.y})")
+            print(f"  Monitor {i+1}: {monitor.width}x{monitor.height} at ({monitor.x}, {monitor.y})")
             if hasattr(monitor, 'is_primary'):
-                print(f"    Primär: {monitor.is_primary}")
-        print(f"Gesamtbildschirmgröße: {self.total_screen_width}x{self.total_screen_height}")
+                print(f"    Primary: {monitor.is_primary}")
+        print(f"Total screen size: {self.total_screen_width}x{self.total_screen_height}")
         
         self.camera_width, self.camera_height = 640, 480
         
-        # Definiere Regionen für verschiedene Monitore/Funktionen
+        # Define regions for different monitors/functions
         self.region_x_min, self.region_x_max = 0.2, 0.8
         self.region_y_min, self.region_y_max = 0.2, 0.8
-        # Monitorschalt-Parameter
+        # Monitor switching parameters
         self.current_monitor = 0
-        # Monitorschaltung mit Randzonen
+        # Monitor switching with edge zones
         self.last_monitor_switch = 0
-        self.monitor_switch_cooldown = 1.0  # Abklingzeit zwischen Monitorschaltungen
-        self.monitor_switch_zone_width = 0.15  # 15% Zonen links/rechts für Monitorschaltung
-        # Richtungsschaltung
+        self.monitor_switch_cooldown = 1.0  # Cooldown between monitor switches
+        self.monitor_switch_zone_width = 0.15  # 15% zones left/right for monitor switching
+        # Direction switching
         self.directional_switch_active = False
         self.pointing_threshold = 0.07
         self.pointing_depth_threshold = 0.06

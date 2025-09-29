@@ -1,4 +1,7 @@
-asl/
+dataset/
+mkl_hook.py
+*.exe
+exe/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
