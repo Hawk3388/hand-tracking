@@ -185,7 +185,7 @@ class HandTrackingMouseControl:
             device = torch.device("cpu")
             self.device = device
             asl_model = FrameMLP2()
-            asl_model.load_state_dict(torch.load(model_path, map_location=device))
+            asl_model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
             asl_model.to(device)
             asl_model.eval()
             self.asl_model = asl_model
