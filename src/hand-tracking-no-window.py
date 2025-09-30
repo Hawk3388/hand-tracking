@@ -9,6 +9,24 @@ import math
 import numpy as np
 from pathlib import Path
 from screeninfo import get_monitors
+import tempfile
+import builtins
+
+# Simple tee logger for no-window builds
+try:
+    _log_file = Path(tempfile.gettempdir()) / "hand-tracking.log"
+    _orig_print = builtins.print
+    def _print_and_log(*args, **kwargs):
+        _orig_print(*args, **kwargs)
+        try:
+            with open(_log_file, "a", encoding="utf-8") as f:
+                f.write(" ".join(str(a) for a in args) + "\n")
+        except Exception:
+            pass
+    builtins.print = _print_and_log
+    print(f"Logging to: {_log_file}")
+except Exception:
+    pass
 
 # ASL modules as global variables
 torch = None
@@ -114,10 +132,17 @@ class HandTrackingMouseControl:
         # ASL Import - genau wie main version
         global torch, FrameMLP2
         try:
-            asl_path = str(Path(__file__).parent.parent / "asl")
+            # Handle PyInstaller onefile extraction path
+            if getattr(sys, 'frozen', False):
+                base_dir = Path(getattr(sys, '_MEIPASS', Path(__file__).parent.parent))
+            else:
+                base_dir = Path(__file__).parent.parent
+
+            asl_base = base_dir / "asl"
+            asl_path = str(asl_base)
             if asl_path not in sys.path:
                 sys.path.insert(0, asl_path)
-            
+
             from model import FrameMLP2 as _FrameMLP2
             import torch as _torch
             torch = _torch
@@ -126,13 +151,25 @@ class HandTrackingMouseControl:
             print(f"Fehler beim ASL-Import: {e}")
             self.enable_asl = False
             return
-            
-        model_path = Path(__file__).parent.parent / "asl" / "model" / "frame_mlp_asl.pt"
-        
+
+        model_path = asl_base / "model" / "frame_mlp_asl.pt"
+
+        # Fallback: recursively search the extracted asl folder for the model file
         if not model_path.exists():
-            print(f"ASL-Modell nicht gefunden: {model_path}")
-            self.enable_asl = False
-            return
+            found = None
+            try:
+                for p in asl_base.rglob('frame_mlp_asl.pt'):
+                    found = p
+                    break
+            except Exception:
+                found = None
+
+            if found:
+                model_path = found
+            else:
+                print(f"ASL-Modell nicht gefunden: {model_path}")
+                self.enable_asl = False
+                return
         
         try:
             device = torch.device("cpu")

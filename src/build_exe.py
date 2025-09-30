@@ -36,7 +36,7 @@ except ImportError as e:
 # Correct path separator based on OS
 path_separator = ";" if IS_WINDOWS else ":"
 
-def build_executable(script_path, script_name, console_mode="--console"):
+def build_executable(script_path, script_name):
     """Build a single executable"""
     print(f"\n🔨 Building {script_name}...")
     
@@ -44,7 +44,7 @@ def build_executable(script_path, script_name, console_mode="--console"):
     pyinstaller_cmd = [
         "pyinstaller",
         "--onefile",
-        console_mode,  # Use console mode parameter
+        "--console",
         "--exclude-module=pygame",      # Not needed
         "--exclude-module=cv2.cuda",    # CUDA not needed
         # Ensure numpy is properly bundled
@@ -59,6 +59,14 @@ def build_executable(script_path, script_name, console_mode="--console"):
     if asl_exists:
         # Add the entire asl directory
         pyinstaller_cmd.append(f'--add-data="{asl_dir}{path_separator}asl"')
+        # Also explicitly add the trained model file (some PyInstaller configs
+        # might not include nested files reliably), keep destination path inside
+        # the bundled 'asl' folder so our runtime code finds it under sys._MEIPASS/asl
+        model_file = asl_model_dir / "frame_mlp_asl.pt"
+        if model_file.exists():
+            # Add the model file and target the directory inside the bundle
+            # (PyInstaller will extract files into sys._MEIPASS/<dest>).
+            pyinstaller_cmd.append(f'--add-data="{model_file}{path_separator}asl/model"')
         print("✅ Added ASL module to build")
     
     # Add PyTorch hidden imports (minimal for ASL)
@@ -118,9 +126,7 @@ if not BUILD_WITH_ASL:
 
 success_count = 0
 for script_path, script_name in scripts_to_build:
-    # Use --noconsole for GUI version, --console for background version
-    console_mode = "--noconsole" if "no-window" not in script_name else "--console"
-    if build_executable(script_path, script_name, console_mode):
+    if build_executable(script_path, script_name):
         success_count += 1
 
 # Show final results
